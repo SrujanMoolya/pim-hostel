@@ -14,7 +14,139 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      departments: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      fees: {
+        Row: {
+          academic_year: string
+          amount: number
+          created_at: string
+          due_date: string
+          id: string
+          paid_amount: number | null
+          payment_date: string | null
+          payment_method: string | null
+          remarks: string | null
+          semester: string
+          status: string | null
+          student_id: string
+          transaction_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          academic_year: string
+          amount: number
+          created_at?: string
+          due_date: string
+          id?: string
+          paid_amount?: number | null
+          payment_date?: string | null
+          payment_method?: string | null
+          remarks?: string | null
+          semester: string
+          status?: string | null
+          student_id: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: string
+          amount?: number
+          created_at?: string
+          due_date?: string
+          id?: string
+          paid_amount?: number | null
+          payment_date?: string | null
+          payment_method?: string | null
+          remarks?: string | null
+          semester?: string
+          status?: string | null
+          student_id?: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fees_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      students: {
+        Row: {
+          admission_date: string | null
+          created_at: string
+          department_id: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          room_number: string | null
+          status: string | null
+          student_id: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          admission_date?: string | null
+          created_at?: string
+          department_id: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          room_number?: string | null
+          status?: string | null
+          student_id: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          admission_date?: string | null
+          created_at?: string
+          department_id?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          room_number?: string | null
+          status?: string | null
+          student_id?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "students_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
