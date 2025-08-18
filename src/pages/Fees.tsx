@@ -19,130 +19,126 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-
-// Sample fee data
-const feeData = [
-  {
-    studentId: "STU001",
-    studentName: "John Doe",
-    department: "Computer Science",
-    year: "2nd Year",
-    roomNumber: "A-201",
-    semesterFee: 45000,
-    hostelFee: 25000,
-    totalFee: 70000,
-    paidAmount: 70000,
-    dueAmount: 0,
-    status: "Paid",
-    dueDate: "2024-01-15",
-    paymentDate: "2024-01-10"
-  },
-  {
-    studentId: "STU002",
-    studentName: "Jane Smith",
-    department: "Electrical Engineering",
-    year: "3rd Year",
-    roomNumber: "B-105",
-    semesterFee: 45000,
-    hostelFee: 25000,
-    totalFee: 70000,
-    paidAmount: 45000,
-    dueAmount: 25000,
-    status: "Partial",
-    dueDate: "2024-01-15",
-    paymentDate: "2024-01-12"
-  },
-  {
-    studentId: "STU003",
-    studentName: "Mike Wilson",
-    department: "Mechanical Engineering",
-    year: "1st Year",
-    roomNumber: "C-301",
-    semesterFee: 45000,
-    hostelFee: 25000,
-    totalFee: 70000,
-    paidAmount: 70000,
-    dueAmount: 0,
-    status: "Paid",
-    dueDate: "2024-01-15",
-    paymentDate: "2024-01-08"
-  },
-  {
-    studentId: "STU004",
-    studentName: "Sarah Johnson",
-    department: "Civil Engineering",
-    year: "4th Year",
-    roomNumber: "A-405",
-    semesterFee: 45000,
-    hostelFee: 25000,
-    totalFee: 70000,
-    paidAmount: 0,
-    dueAmount: 70000,
-    status: "Overdue",
-    dueDate: "2024-01-15",
-    paymentDate: null
-  }
-]
+import { supabase } from "@/integrations/supabase/client"
+import { useQuery } from "@tanstack/react-query"
 
 const Fees = () => {
-  const [academicYear, setAcademicYear] = useState("2023-2024")
+  const [academicYear, setAcademicYear] = useState("2024-25")
   const [statusFilter, setStatusFilter] = useState("all")
 
-  const filteredFeeData = feeData.filter(fee => 
-    statusFilter === "all" || fee.status.toLowerCase() === statusFilter
-  )
+  // Fetch fees with student and department info
+  const { data: feeData = [], isLoading } = useQuery({
+    queryKey: ['fees', academicYear, statusFilter],
+    queryFn: async () => {
+      let query = supabase
+        .from('fees')
+        .select(`
+          *,
+          students (
+            student_id,
+            name,
+            room_number,
+            year,
+            departments (name)
+          )
+        `)
+        .eq('academic_year', academicYear)
 
-  const feeStats = [
+      if (statusFilter !== "all") {
+        query = query.eq('status', statusFilter)
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false })
+
+      if (error) throw error
+      return data || []
+    }
+  })
+
+  // Calculate fee stats
+  const { data: feeStats } = useQuery({
+    queryKey: ['fee-stats', academicYear],
+    queryFn: async () => {
+      const { data: fees, error } = await supabase
+        .from('fees')
+        .select('amount, paid_amount, status')
+        .eq('academic_year', academicYear)
+
+      if (error) throw error
+
+      const totalFees = fees.reduce((sum, fee) => sum + Number(fee.amount), 0)
+      const totalPaid = fees.reduce((sum, fee) => sum + Number(fee.paid_amount), 0)
+      const totalDue = totalFees - totalPaid
+      const paidFees = fees.filter(f => f.status === 'paid').length
+      const overdueFees = fees.filter(f => f.status === 'overdue')
+      const overdueAmount = overdueFees.reduce((sum, fee) => sum + (Number(fee.amount) - Number(fee.paid_amount)), 0)
+      const collectionRate = fees.length > 0 ? Math.round((paidFees / fees.length) * 100) : 0
+
+      return {
+        totalPaid,
+        totalDue,
+        collectionRate,
+        overdueAmount
+      }
+    }
+  })
+
+  const formatCurrency = (amount: number) => {
+    if (amount >= 100000) {
+      return `₹${(amount / 100000).toFixed(1)}L`
+    } else if (amount >= 1000) {
+      return `₹${(amount / 1000).toFixed(0)}K`
+    } else {
+      return `₹${amount.toLocaleString()}`
+    }
+  }
+
+  const filteredFeeData = feeData
+
+  const statsData = [
     {
       title: "Total Collected",
-      value: "₹18.2L",
+      value: formatCurrency(feeStats?.totalPaid || 0),
       icon: DollarSign,
       description: "Current academic year",
-      trend: { value: "+12% from last year", isPositive: true }
+      trend: { value: `${feeStats?.collectionRate || 0}% collection rate`, isPositive: true }
     },
     {
       title: "Pending Collection",
-      value: "₹2.8L",
+      value: formatCurrency(feeStats?.totalDue || 0),
       icon: TrendingDown,
       description: "Outstanding fees",
-      trend: { value: "-8% from last month", isPositive: true }
+      trend: { value: "Needs attention", isPositive: false }
     },
     {
       title: "Collection Rate",
-      value: "87%",
+      value: `${feeStats?.collectionRate || 0}%`,
       icon: TrendingUp,
       description: "Payment completion",
-      trend: { value: "+5% from target", isPositive: true }
+      trend: { value: "This academic year", isPositive: true }
     },
     {
       title: "Overdue Amount",
-      value: "₹95K",
+      value: formatCurrency(feeStats?.overdueAmount || 0),
       icon: Calendar,
       description: "Past due date",
-      trend: { value: "-15% from last month", isPositive: true }
+      trend: { value: "Requires immediate action", isPositive: false }
     }
   ]
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "Paid":
+      case "paid":
         return <Badge className="bg-status-success text-white">Paid</Badge>
-      case "Partial":
+      case "partial":
         return <Badge className="bg-status-warning text-white">Partial</Badge>
-      case "Overdue":
+      case "overdue":
         return <Badge className="bg-status-error text-white">Overdue</Badge>
       default:
         return <Badge variant="outline">{status}</Badge>
     }
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(amount)
-  }
 
   return (
     <div className="space-y-6">
@@ -168,7 +164,7 @@ const Fees = () => {
 
       {/* Fee Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {feeStats.map((stat, index) => (
+        {statsData.map((stat, index) => (
           <StatCard key={index} {...stat} />
         ))}
       </div>
@@ -184,9 +180,9 @@ const Fees = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="2023-2024">2023-2024</SelectItem>
-                  <SelectItem value="2022-2023">2022-2023</SelectItem>
-                  <SelectItem value="2021-2022">2021-2022</SelectItem>
+                  <SelectItem value="2024-25">2024-2025</SelectItem>
+                  <SelectItem value="2023-24">2023-2024</SelectItem>
+                  <SelectItem value="2022-23">2022-2023</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -234,58 +230,75 @@ const Fees = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredFeeData.map((fee) => (
-                  <TableRow key={fee.studentId} className="hover:bg-muted/50">
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{fee.studentName}</span>
-                        <span className="text-xs text-muted-foreground">{fee.studentId}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="text-sm">{fee.department}</span>
-                        <span className="text-xs text-muted-foreground">{fee.year}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{fee.roomNumber}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {formatCurrency(fee.totalFee)}
-                    </TableCell>
-                    <TableCell className="text-right text-status-success">
-                      {formatCurrency(fee.paidAmount)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {fee.dueAmount > 0 ? (
-                        <span className="text-status-error font-medium">
-                          {formatCurrency(fee.dueAmount)}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(fee.status)}</TableCell>
-                    <TableCell>
-                      <span className={`text-sm ${new Date(fee.dueDate) < new Date() && fee.dueAmount > 0 ? 'text-status-error' : 'text-foreground'}`}>
-                        {new Date(fee.dueDate).toLocaleDateString()}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button variant="outline" size="sm">
-                          View Details
-                        </Button>
-                        {fee.dueAmount > 0 && (
-                          <Button size="sm" className="bg-primary hover:bg-primary-hover">
-                            Pay Now
-                          </Button>
-                        )}
-                      </div>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-4">
+                      Loading fees...
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : filteredFeeData.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-4">
+                      No fee records found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredFeeData.map((fee) => {
+                    const dueAmount = Number(fee.amount) - Number(fee.paid_amount)
+                    return (
+                      <TableRow key={fee.id} className="hover:bg-muted/50">
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{fee.students?.name}</span>
+                            <span className="text-xs text-muted-foreground">{fee.students?.student_id}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="text-sm">{fee.students?.departments?.name}</span>
+                            <span className="text-xs text-muted-foreground">{fee.students?.year}th Year</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{fee.students?.room_number || 'Not Assigned'}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(Number(fee.amount))}
+                        </TableCell>
+                        <TableCell className="text-right text-status-success">
+                          {formatCurrency(Number(fee.paid_amount))}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {dueAmount > 0 ? (
+                            <span className="text-status-error font-medium">
+                              {formatCurrency(dueAmount)}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>{getStatusBadge(fee.status)}</TableCell>
+                        <TableCell>
+                          <span className={`text-sm ${new Date(fee.due_date) < new Date() && dueAmount > 0 ? 'text-status-error' : 'text-foreground'}`}>
+                            {new Date(fee.due_date).toLocaleDateString()}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end space-x-2">
+                            <Button variant="outline" size="sm">
+                              View Details
+                            </Button>
+                            {dueAmount > 0 && (
+                              <Button size="sm" className="bg-primary hover:bg-primary-hover">
+                                Pay Now
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
+                )}
               </TableBody>
             </Table>
           </div>

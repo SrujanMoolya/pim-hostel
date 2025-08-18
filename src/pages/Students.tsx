@@ -25,76 +25,71 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-
-// Sample student data
-const studentsData = [
-  {
-    id: "STU001",
-    name: "John Doe",
-    department: "Computer Science",
-    year: "2nd Year",
-    roomNumber: "A-201",
-    contact: "+91 9876543210",
-    feeStatus: "Paid",
-    joinDate: "2023-08-15"
-  },
-  {
-    id: "STU002",
-    name: "Jane Smith",
-    department: "Electrical Engineering",
-    year: "3rd Year",
-    roomNumber: "B-105",
-    contact: "+91 9876543211",
-    feeStatus: "Pending",
-    joinDate: "2022-08-20"
-  },
-  {
-    id: "STU003",
-    name: "Mike Wilson",
-    department: "Mechanical Engineering",
-    year: "1st Year",
-    roomNumber: "C-301",
-    contact: "+91 9876543212",
-    feeStatus: "Paid",
-    joinDate: "2023-08-25"
-  },
-  {
-    id: "STU004",
-    name: "Sarah Johnson",
-    department: "Civil Engineering",
-    year: "4th Year",
-    roomNumber: "A-405",
-    contact: "+91 9876543213",
-    feeStatus: "Overdue",
-    joinDate: "2021-08-10"
-  },
-  {
-    id: "STU005",
-    name: "David Brown",
-    department: "Computer Science",
-    year: "2nd Year",
-    roomNumber: "B-202",
-    contact: "+91 9876543214",
-    feeStatus: "Paid",
-    joinDate: "2023-08-18"
-  }
-]
+import { supabase } from "@/integrations/supabase/client"
+import { useQuery } from "@tanstack/react-query"
 
 const Students = () => {
   const [searchQuery, setSearchQuery] = useState("")
   const [yearFilter, setYearFilter] = useState("all")
   const [departmentFilter, setDepartmentFilter] = useState("all")
 
+  // Fetch students with departments
+  const { data: studentsData = [], isLoading } = useQuery({
+    queryKey: ['students'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('students')
+        .select(`
+          *,
+          departments (name),
+          fees (status, paid_amount, amount)
+        `)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      return data || []
+    }
+  })
+
+  // Fetch departments for filter
+  const { data: departments = [] } = useQuery({
+    queryKey: ['departments'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('departments')
+        .select('*')
+        .order('name')
+
+      if (error) throw error
+      return data || []
+    }
+  })
+
   const filteredStudents = studentsData.filter(student => {
-    const matchesSearch = student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         student.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         student.roomNumber.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesSearch = student.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         student.student_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         student.room_number?.toLowerCase().includes(searchQuery.toLowerCase())
     
-    const matchesYear = yearFilter === "all" || student.year === yearFilter
-    const matchesDepartment = departmentFilter === "all" || student.department === departmentFilter
+    const matchesYear = yearFilter === "all" || student.year.toString() === yearFilter
+    const matchesDepartment = departmentFilter === "all" || student.departments?.name === departmentFilter
 
     return matchesSearch && matchesYear && matchesDepartment
   })
+
+  const getFeeStatus = (fees: any[]) => {
+    if (!fees || fees.length === 0) return 'No Fees'
+    
+    const currentYearFees = fees.filter(f => f.status)
+    if (currentYearFees.length === 0) return 'No Fees'
+    
+    const paidFees = currentYearFees.filter(f => f.status === 'paid')
+    const partialFees = currentYearFees.filter(f => f.status === 'partial')
+    
+    if (paidFees.length === currentYearFees.length) return 'Paid'
+    if (partialFees.length > 0 || paidFees.length > 0) return 'Partial'
+    return 'Pending'
+  }
 
   const getFeeStatusBadge = (status: string) => {
     switch (status) {
@@ -144,10 +139,10 @@ const Students = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Years</SelectItem>
-                <SelectItem value="1st Year">1st Year</SelectItem>
-                <SelectItem value="2nd Year">2nd Year</SelectItem>
-                <SelectItem value="3rd Year">3rd Year</SelectItem>
-                <SelectItem value="4th Year">4th Year</SelectItem>
+                <SelectItem value="1">1st Year</SelectItem>
+                <SelectItem value="2">2nd Year</SelectItem>
+                <SelectItem value="3">3rd Year</SelectItem>
+                <SelectItem value="4">4th Year</SelectItem>
               </SelectContent>
             </Select>
             <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
@@ -156,10 +151,11 @@ const Students = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Departments</SelectItem>
-                <SelectItem value="Computer Science">Computer Science</SelectItem>
-                <SelectItem value="Electrical Engineering">Electrical Engineering</SelectItem>
-                <SelectItem value="Mechanical Engineering">Mechanical Engineering</SelectItem>
-                <SelectItem value="Civil Engineering">Civil Engineering</SelectItem>
+                {departments.map((dept) => (
+                  <SelectItem key={dept.id} value={dept.name}>
+                    {dept.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Button variant="outline">
@@ -191,24 +187,37 @@ const Students = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredStudents.map((student) => (
-                  <TableRow key={student.id} className="hover:bg-muted/50">
-                    <TableCell className="font-medium">{student.id}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{student.name}</span>
-                        <span className="text-xs text-muted-foreground">
-                          Joined: {new Date(student.joinDate).toLocaleDateString()}
-                        </span>
-                      </div>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-4">
+                      Loading students...
                     </TableCell>
-                    <TableCell>{student.department}</TableCell>
-                    <TableCell>{student.year}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{student.roomNumber}</Badge>
+                  </TableRow>
+                ) : filteredStudents.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-4">
+                      No students found
                     </TableCell>
-                    <TableCell>{student.contact}</TableCell>
-                    <TableCell>{getFeeStatusBadge(student.feeStatus)}</TableCell>
+                  </TableRow>
+                ) : (
+                  filteredStudents.map((student) => (
+                    <TableRow key={student.id} className="hover:bg-muted/50">
+                      <TableCell className="font-medium">{student.student_id}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{student.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            Joined: {new Date(student.admission_date || student.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{student.departments?.name}</TableCell>
+                      <TableCell>{student.year}th Year</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{student.room_number || 'Not Assigned'}</Badge>
+                      </TableCell>
+                      <TableCell>{student.phone || 'N/A'}</TableCell>
+                      <TableCell>{getFeeStatusBadge(getFeeStatus(student.fees))}</TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -231,9 +240,10 @@ const Students = () => {
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>

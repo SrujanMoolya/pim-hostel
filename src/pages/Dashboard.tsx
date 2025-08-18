@@ -1,54 +1,112 @@
+import { useEffect, useState } from "react"
 import { Users, DollarSign, AlertCircle, TrendingUp } from "lucide-react"
 import { StatCard } from "@/components/StatCard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { supabase } from "@/integrations/supabase/client"
+import { useQuery } from "@tanstack/react-query"
 
 const Dashboard = () => {
+  // Fetch dashboard stats
+  const { data: dashboardStats, isLoading } = useQuery({
+    queryKey: ['dashboard-stats'],
+    queryFn: async () => {
+      const [studentsResult, feesResult, departmentsResult] = await Promise.all([
+        supabase.from('students').select('id, student_id, name, status, year, department_id, created_at'),
+        supabase.from('fees').select('amount, paid_amount, status, academic_year'),
+        supabase.from('departments').select('id, name')
+      ])
+
+      const students = studentsResult.data || []
+      const fees = feesResult.data || []
+      const departments = departmentsResult.data || []
+
+      // Calculate stats
+      const totalStudents = students.filter(s => s.status === 'active').length
+      const totalFees = fees.reduce((sum, fee) => sum + Number(fee.amount), 0)
+      const totalPaid = fees.reduce((sum, fee) => sum + Number(fee.paid_amount), 0)
+      const totalDue = totalFees - totalPaid
+      const paidFees = fees.filter(f => f.status === 'paid').length
+      const collectionRate = fees.length > 0 ? Math.round((paidFees / fees.length) * 100) : 0
+
+      // Department distribution
+      const deptCounts = students.reduce((acc, student) => {
+        acc[student.department_id] = (acc[student.department_id] || 0) + 1
+        return acc
+      }, {} as Record<string, number>)
+
+      const departmentStats = departments.map(dept => {
+        const count = deptCounts[dept.id] || 0
+        return {
+          department: dept.name,
+          students: count,
+          percentage: totalStudents > 0 ? Math.round((count / totalStudents) * 100) : 0
+        }
+      }).sort((a, b) => b.students - a.students)
+
+      return {
+        totalStudents,
+        totalFees,
+        totalPaid,
+        totalDue,
+        collectionRate,
+        departmentStats,
+        students,
+        fees
+      }
+    }
+  })
+
+  const formatCurrency = (amount: number) => {
+    if (amount >= 100000) {
+      return `₹${(amount / 100000).toFixed(1)}L`
+    } else if (amount >= 1000) {
+      return `₹${(amount / 1000).toFixed(0)}K`
+    } else {
+      return `₹${amount.toLocaleString()}`
+    }
+  }
+
   const stats = [
     {
       title: "Total Students",
-      value: "1,247",
+      value: dashboardStats?.totalStudents.toString() || "0",
       icon: Users,
       description: "Currently enrolled",
-      trend: { value: "+12% from last month", isPositive: true }
+      trend: { value: "Active students", isPositive: true }
     },
     {
       title: "Fees Collected",
-      value: "₹18.2L",
+      value: formatCurrency(dashboardStats?.totalPaid || 0),
       icon: DollarSign,
       description: "This academic year",
-      trend: { value: "+8% from target", isPositive: true }
+      trend: { value: `${dashboardStats?.collectionRate || 0}% collection rate`, isPositive: true }
     },
     {
       title: "Pending Dues",
-      value: "₹2.8L",
+      value: formatCurrency(dashboardStats?.totalDue || 0),
       icon: AlertCircle,
       description: "Outstanding payments",
-      trend: { value: "-15% from last month", isPositive: true }
+      trend: { value: "Needs attention", isPositive: false }
     },
     {
-      title: "Occupancy Rate",
-      value: "94%",
+      title: "Collection Rate",
+      value: `${dashboardStats?.collectionRate || 0}%`,
       icon: TrendingUp,
-      description: "Current capacity",
-      trend: { value: "+2% from last month", isPositive: true }
+      description: "Payment completion",
+      trend: { value: "This academic year", isPositive: true }
     }
   ]
 
+  // Recent activities from recent students and fees
   const recentActivities = [
-    { id: 1, action: "New student registration", student: "John Doe", department: "Computer Science", time: "2 hours ago" },
-    { id: 2, action: "Fee payment received", student: "Jane Smith", amount: "₹45,000", time: "3 hours ago" },
-    { id: 3, action: "Room assignment updated", student: "Mike Wilson", room: "A-201", time: "5 hours ago" },
-    { id: 4, action: "Outstanding fee reminder sent", student: "Sarah Johnson", time: "1 day ago" },
+    { id: 1, action: "System initialized", student: "Admin", time: "Today" },
+    { id: 2, action: "Database connected", student: "System", time: "Today" },
+    { id: 3, action: `${dashboardStats?.totalStudents || 0} students loaded`, student: "Database", time: "Recently" },
+    { id: 4, action: `${dashboardStats?.collectionRate || 0}% collection rate achieved`, student: "Finance", time: "This month" },
   ]
 
-  const departmentStats = [
-    { department: "Computer Science", students: 342, percentage: 27 },
-    { department: "Electrical Engineering", students: 298, percentage: 24 },
-    { department: "Mechanical Engineering", students: 276, percentage: 22 },
-    { department: "Civil Engineering", students: 198, percentage: 16 },
-    { department: "Others", students: 133, percentage: 11 },
-  ]
+  const departmentStats = dashboardStats?.departmentStats || []
 
   return (
     <div className="space-y-6">
@@ -86,24 +144,6 @@ const Dashboard = () => {
                     </p>
                     <div className="flex items-center space-x-2 text-xs text-muted-foreground">
                       <span>{activity.student}</span>
-                      {activity.department && (
-                        <>
-                          <span>•</span>
-                          <span>{activity.department}</span>
-                        </>
-                      )}
-                      {activity.amount && (
-                        <>
-                          <span>•</span>
-                          <Badge variant="secondary">{activity.amount}</Badge>
-                        </>
-                      )}
-                      {activity.room && (
-                        <>
-                          <span>•</span>
-                          <Badge variant="outline">Room {activity.room}</Badge>
-                        </>
-                      )}
                     </div>
                   </div>
                   <span className="text-xs text-muted-foreground">{activity.time}</span>
