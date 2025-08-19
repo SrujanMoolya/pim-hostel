@@ -1,6 +1,8 @@
 import { useState } from "react"
 import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { AddStudentDialog } from "@/components/AddStudentDialog"
+import { EditStudentDialog } from "@/components/EditStudentDialog"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -26,12 +28,15 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { supabase } from "@/integrations/supabase/client"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useToast } from "@/hooks/use-toast"
 
 const Students = () => {
   const [searchQuery, setSearchQuery] = useState("")
   const [yearFilter, setYearFilter] = useState("all")
   const [departmentFilter, setDepartmentFilter] = useState("all")
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
 
   // Fetch students with departments
   const { data: studentsData = [], isLoading } = useQuery({
@@ -104,6 +109,32 @@ const Students = () => {
     }
   }
 
+  const handleDeleteStudent = async (studentId: string) => {
+    if (window.confirm("Are you sure you want to delete this student?")) {
+      try {
+        const { error } = await supabase
+          .from("students")
+          .delete()
+          .eq("id", studentId)
+
+        if (error) throw error
+
+        toast({
+          title: "Success",
+          description: "Student deleted successfully",
+        })
+
+        queryClient.invalidateQueries({ queryKey: ["students"] })
+      } catch (error: any) {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to delete student",
+          variant: "destructive",
+        })
+      }
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -114,10 +145,7 @@ const Students = () => {
             Manage student records, room assignments, and information
           </p>
         </div>
-        <Button className="bg-primary hover:bg-primary-hover text-primary-foreground">
-          <Plus className="h-4 w-4 mr-2" />
-          Add New Student
-        </Button>
+        <AddStudentDialog departments={departments} />
       </div>
 
       {/* Filters and Search */}
@@ -179,6 +207,7 @@ const Students = () => {
                   <TableHead>Student ID</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Department</TableHead>
+                  <TableHead>College</TableHead>
                   <TableHead>Year</TableHead>
                   <TableHead>Room</TableHead>
                   <TableHead>Contact</TableHead>
@@ -189,13 +218,13 @@ const Students = () => {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-4">
+                    <TableCell colSpan={9} className="text-center py-4">
                       Loading students...
                     </TableCell>
                   </TableRow>
                 ) : filteredStudents.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-4">
+                    <TableCell colSpan={9} className="text-center py-4">
                       No students found
                     </TableCell>
                   </TableRow>
@@ -212,6 +241,9 @@ const Students = () => {
                         </div>
                       </TableCell>
                       <TableCell>{student.departments?.name}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{student.college || 'Not Set'}</Badge>
+                      </TableCell>
                       <TableCell>{student.year}th Year</TableCell>
                       <TableCell>
                         <Badge variant="outline">{student.room_number || 'Not Assigned'}</Badge>
@@ -230,11 +262,16 @@ const Students = () => {
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit Student
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
+                          <EditStudentDialog student={student} departments={departments}>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit Student
+                            </DropdownMenuItem>
+                          </EditStudentDialog>
+                          <DropdownMenuItem 
+                            className="text-destructive"
+                            onClick={() => handleDeleteStudent(student.id)}
+                          >
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete Student
                           </DropdownMenuItem>
