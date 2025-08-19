@@ -35,7 +35,7 @@ const studentSchema = z.object({
   student_id: z.string().min(1, "Student ID is required"),
   name: z.string().min(1, "Name is required"),
   email: z.string().email().optional().or(z.literal("")),
-  phone: z.string().optional(),
+  phone: z.string().min(1, "Phone number is required"),
   year: z.string().min(1, "Year is required"),
   department_id: z.string().min(1, "Department is required"),
   college: z.string().min(1, "College is required"),
@@ -182,7 +182,7 @@ export const EditStudentDialog = ({ student, departments, children }: EditStuden
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone (Optional)</FormLabel>
+                  <FormLabel>Phone *</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter phone number" {...field} />
                   </FormControl>

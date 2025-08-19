@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/select"
 import { supabase } from "@/integrations/supabase/client"
 import { useQuery } from "@tanstack/react-query"
+import { RecordPaymentDialog } from "@/components/RecordPaymentDialog"
+import { PaymentDialog } from "@/components/PaymentDialog"
 
 const Fees = () => {
   const [academicYear, setAcademicYear] = useState("2024-25")
@@ -37,6 +39,7 @@ const Fees = () => {
           students (
             student_id,
             name,
+            phone,
             room_number,
             year,
             departments (name)
@@ -155,10 +158,7 @@ const Fees = () => {
             <Download className="h-4 w-4 mr-2" />
             Export Report
           </Button>
-          <Button className="bg-primary hover:bg-primary-hover text-primary-foreground">
-            <DollarSign className="h-4 w-4 mr-2" />
-            Record Payment
-          </Button>
+          <RecordPaymentDialog />
         </div>
       </div>
 
@@ -220,6 +220,7 @@ const Fees = () => {
                 <TableRow>
                   <TableHead>Student</TableHead>
                   <TableHead>Department & Year</TableHead>
+                  <TableHead>Phone</TableHead>
                   <TableHead>Room</TableHead>
                   <TableHead className="text-right">Total Fee</TableHead>
                   <TableHead className="text-right">Paid Amount</TableHead>
@@ -232,13 +233,13 @@ const Fees = () => {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-4">
+                    <TableCell colSpan={10} className="text-center py-4">
                       Loading fees...
                     </TableCell>
                   </TableRow>
                 ) : filteredFeeData.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-4">
+                    <TableCell colSpan={10} className="text-center py-4">
                       No fee records found
                     </TableCell>
                   </TableRow>
@@ -258,6 +259,9 @@ const Fees = () => {
                             <span className="text-sm">{fee.students?.departments?.name}</span>
                             <span className="text-xs text-muted-foreground">{fee.students?.year}th Year</span>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm font-medium">{fee.students?.phone || 'Not provided'}</span>
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline">{fee.students?.room_number || 'Not Assigned'}</Badge>
@@ -289,9 +293,7 @@ const Fees = () => {
                               View Details
                             </Button>
                             {dueAmount > 0 && (
-                              <Button size="sm" className="bg-primary hover:bg-primary-hover">
-                                Pay Now
-                              </Button>
+                              <PaymentDialog fee={fee} />
                             )}
                           </div>
                         </TableCell>
