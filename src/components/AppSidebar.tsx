@@ -44,6 +44,11 @@ const navigationItems = [
     url: "/settings", 
     icon: Settings 
   },
+  {
+    title: "Developed By",
+    url: "/developed-by",
+    icon: Building2
+  },
 ]
 
 export function AppSidebar() {
@@ -71,7 +76,7 @@ export function AppSidebar() {
             <div className="flex items-center space-x-2">
               <Building2 className="h-8 w-8 text-primary" />
               <div className="flex flex-col">
-                <span className="text-lg font-semibold text-sidebar-foreground">HMS</span>
+                <span className="text-lg font-semibold text-sidebar-foreground">PIM-HMS</span>
                 <span className="text-xs text-muted-foreground">Admin Panel</span>
               </div>
             </div>
