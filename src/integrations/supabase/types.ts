@@ -41,12 +41,12 @@ export type Database = {
           amount: number
           created_at: string
           due_date: string
+          fee_year: string
           id: string
           paid_amount: number | null
           payment_date: string | null
           payment_method: string | null
           remarks: string | null
-          semester: string
           status: string | null
           student_id: string
           transaction_id: string | null
@@ -57,12 +57,12 @@ export type Database = {
           amount: number
           created_at?: string
           due_date: string
+          fee_year: string
           id?: string
           paid_amount?: number | null
           payment_date?: string | null
           payment_method?: string | null
           remarks?: string | null
-          semester: string
           status?: string | null
           student_id: string
           transaction_id?: string | null
@@ -73,12 +73,12 @@ export type Database = {
           amount?: number
           created_at?: string
           due_date?: string
+          fee_year?: string
           id?: string
           paid_amount?: number | null
           payment_date?: string | null
           payment_method?: string | null
           remarks?: string | null
-          semester?: string
           status?: string | null
           student_id?: string
           transaction_id?: string | null

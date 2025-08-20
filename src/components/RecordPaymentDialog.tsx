@@ -36,7 +36,7 @@ import { DollarSign } from "lucide-react"
 const paymentSchema = z.object({
   student_id: z.string().min(1, "Please select a student"),
   academic_year: z.string().min(1, "Please select academic year"),
-  semester: z.string().min(1, "Please select semester"),
+  fee_year: z.string().min(1, "Please select fee year"),
   amount: z.number().min(1, "Amount must be greater than 0"),
   paid_amount: z.number().min(0, "Paid amount must be 0 or greater"),
   payment_method: z.enum(["cash", "upi", "bank_transfer"], {
@@ -70,7 +70,7 @@ export function RecordPaymentDialog({ children }: RecordPaymentDialogProps) {
     resolver: zodResolver(paymentSchema),
     defaultValues: {
       academic_year: "2024-25",
-      semester: "Semester 1",
+      fee_year: "Year 1",
       amount: 0,
       paid_amount: 0,
       payment_method: "cash",
@@ -103,7 +103,7 @@ export function RecordPaymentDialog({ children }: RecordPaymentDialogProps) {
       const feeData = {
         student_id: data.student_id,
         academic_year: data.academic_year,
-        semester: data.semester,
+        fee_year: data.fee_year,
         amount: data.amount,
         paid_amount: data.paid_amount,
         payment_method: data.payment_method,
@@ -209,10 +209,10 @@ export function RecordPaymentDialog({ children }: RecordPaymentDialogProps) {
 
               <FormField
                 control={form.control}
-                name="semester"
+                name="fee_year"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Semester *</FormLabel>
+                    <FormLabel>Fee Year *</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -220,8 +220,11 @@ export function RecordPaymentDialog({ children }: RecordPaymentDialogProps) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Semester 1">Semester 1</SelectItem>
-                        <SelectItem value="Semester 2">Semester 2</SelectItem>
+                        <SelectItem value="Year 1">Year 1</SelectItem>
+                        <SelectItem value="Year 2">Year 2</SelectItem>
+                        <SelectItem value="Year 3">Year 3</SelectItem>
+                        <SelectItem value="Year 4">Year 4</SelectItem>
+                        <SelectItem value="Annual">Annual</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

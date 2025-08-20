@@ -27,10 +27,13 @@ import { PaymentDialog } from "@/components/PaymentDialog"
 const Fees = () => {
   const [academicYear, setAcademicYear] = useState("2024-25")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [showMoreFilters, setShowMoreFilters] = useState(false)
+  const [departmentFilter, setDepartmentFilter] = useState("all")
+  const [feeYearFilter, setFeeYearFilter] = useState("all")
 
   // Fetch fees with student and department info
   const { data: feeData = [], isLoading } = useQuery({
-    queryKey: ['fees', academicYear, statusFilter],
+    queryKey: ['fees', academicYear, statusFilter, departmentFilter, feeYearFilter],
     queryFn: async () => {
       let query = supabase
         .from('fees')
@@ -51,11 +54,23 @@ const Fees = () => {
         query = query.eq('status', statusFilter)
       }
 
+      if (feeYearFilter !== "all") {
+        query = query.eq('fee_year', feeYearFilter)
+      }
+
       const { data, error } = await query.order('created_at', { ascending: false })
 
       if (error) throw error
       return data || []
     }
+  })
+
+  // Apply department filter client-side since we need to filter by joined data
+  const filteredFeeData = feeData.filter(fee => {
+    if (departmentFilter !== "all") {
+      return fee.students?.departments?.name === departmentFilter
+    }
+    return true
   })
 
   // Calculate fee stats
@@ -96,7 +111,6 @@ const Fees = () => {
     }
   }
 
-  const filteredFeeData = feeData
 
   const statsData = [
     {
@@ -142,6 +156,41 @@ const Fees = () => {
     }
   }
 
+  const exportToCSV = () => {
+    const headers = ['Student ID', 'Student Name', 'Phone', 'Department', 'Fee Year', 'Total Fee', 'Paid Amount', 'Due Amount', 'Payment Method', 'Transaction ID', 'Status', 'Due Date']
+    const csvData = filteredFeeData.map(fee => {
+      const dueAmount = Number(fee.amount) - Number(fee.paid_amount)
+      return [
+        fee.students?.student_id || '',
+        fee.students?.name || '',
+        fee.students?.phone || '',
+        fee.students?.departments?.name || '',
+        fee.fee_year || '',
+        fee.amount,
+        fee.paid_amount,
+        dueAmount,
+        fee.payment_method || 'Cash',
+        fee.transaction_id || '',
+        fee.status,
+        new Date(fee.due_date).toLocaleDateString()
+      ]
+    })
+
+    const csvContent = [headers, ...csvData]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `fee-records-${academicYear}-${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
 
   return (
     <div className="space-y-6">
@@ -154,7 +203,7 @@ const Fees = () => {
           </p>
         </div>
         <div className="flex space-x-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => exportToCSV()}>
             <Download className="h-4 w-4 mr-2" />
             Export Report
           </Button>
@@ -200,11 +249,46 @@ const Fees = () => {
                 </SelectContent>
               </Select>
             </div>
-            <Button variant="outline" className="ml-auto">
+            <Button variant="outline" className="ml-auto" onClick={() => setShowMoreFilters(!showMoreFilters)}>
               <Filter className="h-4 w-4 mr-2" />
               More Filters
             </Button>
           </div>
+          {showMoreFilters && (
+            <div className="flex flex-col space-y-4 md:flex-row md:items-center md:space-y-0 md:space-x-4 pt-4">
+              <div className="flex items-center space-x-2">
+                <label className="text-sm font-medium text-foreground">Department:</label>
+                <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Departments</SelectItem>
+                    <SelectItem value="CSE">Computer Science</SelectItem>
+                    <SelectItem value="ECE">Electronics</SelectItem>
+                    <SelectItem value="ME">Mechanical</SelectItem>
+                    <SelectItem value="CE">Civil</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center space-x-2">
+                <label className="text-sm font-medium text-foreground">Fee Year:</label>
+                <Select value={feeYearFilter} onValueChange={setFeeYearFilter}>
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Years</SelectItem>
+                    <SelectItem value="Year 1">Year 1</SelectItem>
+                    <SelectItem value="Year 2">Year 2</SelectItem>
+                    <SelectItem value="Year 3">Year 3</SelectItem>
+                    <SelectItem value="Year 4">Year 4</SelectItem>
+                    <SelectItem value="Annual">Annual</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -220,11 +304,14 @@ const Fees = () => {
                 <TableRow>
                   <TableHead>Student</TableHead>
                   <TableHead>Department & Year</TableHead>
+                  <TableHead>Fee Year</TableHead>
                   <TableHead>Phone</TableHead>
                   <TableHead>Room</TableHead>
                   <TableHead className="text-right">Total Fee</TableHead>
                   <TableHead className="text-right">Paid Amount</TableHead>
                   <TableHead className="text-right">Due Amount</TableHead>
+                  <TableHead>Payment Method</TableHead>
+                  <TableHead>Transaction ID</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Due Date</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -233,13 +320,13 @@ const Fees = () => {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-4">
+                    <TableCell colSpan={13} className="text-center py-4">
                       Loading fees...
                     </TableCell>
                   </TableRow>
                 ) : filteredFeeData.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-4">
+                    <TableCell colSpan={13} className="text-center py-4">
                       No fee records found
                     </TableCell>
                   </TableRow>
@@ -261,6 +348,9 @@ const Fees = () => {
                           </div>
                         </TableCell>
                         <TableCell>
+                          <Badge variant="outline">{fee.fee_year || 'Not specified'}</Badge>
+                        </TableCell>
+                        <TableCell>
                           <span className="text-sm font-medium">{fee.students?.phone || 'Not provided'}</span>
                         </TableCell>
                         <TableCell>
@@ -280,6 +370,12 @@ const Fees = () => {
                           ) : (
                             <span className="text-muted-foreground">-</span>
                           )}
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm capitalize">{fee.payment_method || 'Cash'}</span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm">{fee.transaction_id || '-'}</span>
                         </TableCell>
                         <TableCell>{getStatusBadge(fee.status)}</TableCell>
                         <TableCell>

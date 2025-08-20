@@ -80,7 +80,10 @@ export function PaymentDialog({ fee, children }: PaymentDialogProps) {
       setLoading(true)
 
       const newPaidAmount = Number(fee.paid_amount) + data.paid_amount
-      const newStatus = newPaidAmount >= Number(fee.amount) ? 'paid' : 'partial'
+      const totalAmount = Number(fee.amount)
+      const newStatus = newPaidAmount >= totalAmount ? 'paid' : 
+                       newPaidAmount > 0 ? 'partial' : 
+                       new Date(fee.due_date) < new Date() ? 'overdue' : 'pending'
 
       const updateData = {
         paid_amount: newPaidAmount,
