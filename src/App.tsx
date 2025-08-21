@@ -8,6 +8,7 @@ import Students from "@/pages/Students";
 import Fees from "@/pages/Fees";
 import Settings from "@/pages/Settings";
 import DevelopedBy from "@/pages/DevelopedBy";
+import Login from "@/pages/Login";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -17,17 +18,25 @@ const App = () => (
     <Toaster />
     <Sonner />
     <BrowserRouter>
-      <DashboardLayout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/students" element={<Students />} />
-          <Route path="/fees" element={<Fees />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/developed-by" element={<DevelopedBy />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </DashboardLayout>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="*"
+          element={
+            <DashboardLayout>
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/students" element={<Students />} />
+                <Route path="/fees" element={<Fees />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/developed-by" element={<DevelopedBy />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </DashboardLayout>
+          }
+        />
+      </Routes>
     </BrowserRouter>
   </QueryClientProvider>
 );

@@ -1,10 +1,20 @@
-import { Settings as SettingsIcon, User, Bell, Shield, Database, Palette } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
+import { Bell, Shield, Database, Settings as SettingsIcon } from "lucide-react"
+import { Label } from "@/components/ui/label"
+
+import { User } from "lucide-react"
+
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent
+} from "@/components/ui/card"
+
 import {
   Select,
   SelectContent,
@@ -12,6 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+
+import AccountsManager from "./AccountsManager"
 
 const Settings = () => {
   return (
@@ -22,6 +34,11 @@ const Settings = () => {
         <p className="text-muted-foreground">
           Configure your hostel management system preferences and settings
         </p>
+      </div>
+
+      {/* Accounts Management Section */}
+      <div className="mb-8">
+        <AccountsManager />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
