@@ -24,6 +24,8 @@ import {
 } from "@/components/ui/select"
 
 import AccountsManager from "./AccountsManager"
+import CollegeDepartmentManager from "@/components/CollegeDepartmentManager"
+import DataManager from "@/components/DataManager"
 
 const Settings = () => {
   return (
@@ -39,6 +41,11 @@ const Settings = () => {
       {/* Accounts Management Section */}
       <div className="mb-8">
         <AccountsManager />
+      </div>
+
+      {/* College & Department Management */}
+      <div className="mb-8">
+        <CollegeDepartmentManager />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -201,61 +208,10 @@ const Settings = () => {
           </CardContent>
         </Card>
 
-        {/* Data Management */}
+        {/* Data Management - Now Functional */}
         <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Database className="h-5 w-5 mr-2" />
-              Data Management
-            </CardTitle>
-            <CardDescription>
-              Backup, export, and manage your hostel data
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-center space-y-2">
-                    <h3 className="font-medium">Backup Data</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Create a backup of all hostel data
-                    </p>
-                    <Button variant="outline" size="sm">
-                      Create Backup
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-center space-y-2">
-                    <h3 className="font-medium">Export Reports</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Export student and fee reports
-                    </p>
-                    <Button variant="outline" size="sm">
-                      Export Data
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-center space-y-2">
-                    <h3 className="font-medium">System Health</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Check system performance
-                    </p>
-                    <Button variant="outline" size="sm">
-                      Run Diagnostics
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+          <CardContent className="pt-6">
+            <DataManager />
           </CardContent>
         </Card>
       </div>

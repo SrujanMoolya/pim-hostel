@@ -63,11 +63,12 @@ export default function AccountsManager() {
     setLoading(true);
     setError("");
     setSuccess("");
-    // This will send a reset email to the user
-    const { error } = await supabase.auth.admin.resetPasswordForEmail(accounts.find(a => a.id === id)?.email || "");
+    // Generate a new password for the user
+    const newPassword = Math.random().toString(36).slice(-10);
+    const { error } = await supabase.auth.admin.updateUserById(id, { password: newPassword });
     setLoading(false);
     if (error) setError(error.message);
-    else setSuccess("Password reset email sent");
+    else setSuccess(`Password reset to: ${newPassword}`);
   }
 
   return (
