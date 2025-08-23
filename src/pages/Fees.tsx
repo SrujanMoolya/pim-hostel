@@ -33,6 +33,7 @@ const Fees = () => {
   const [departmentFilter, setDepartmentFilter] = useState("all")
   const [feeYearFilter, setFeeYearFilter] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
+  const [genderFilter, setGenderFilter] = useState("all")
 
   // Fetch fees with student and department info
   const { data: feeData = [], isLoading } = useQuery({
@@ -46,6 +47,7 @@ const Fees = () => {
             id,
             student_id,
             name,
+            gender,
             phone,
             room_number,
             year,
@@ -73,6 +75,11 @@ const Fees = () => {
   const filteredFeeData = feeData.filter((fee) => {
     // Department filter
     if (departmentFilter !== "all" && fee.students?.departments?.name !== departmentFilter) {
+      return false
+    }
+
+    // Gender filter
+    if (genderFilter !== "all" && (fee.students?.gender || '').toLowerCase() !== genderFilter.toLowerCase()) {
       return false
     }
 
@@ -177,11 +184,13 @@ const Fees = () => {
 
   const exportToCSV = () => {
     const headers = ['Student ID', 'Student Name', 'Phone', 'Department', 'Fee Year', 'Total Fee', 'Paid Amount', 'Due Amount', 'Payment Method', 'Transaction ID', 'Status', 'Due Date']
-    const csvData = filteredFeeData.map(fee => {
+  const headersWithGender = ['Student ID', 'Student Name', 'Gender', 'Phone', 'Department', 'Fee Year', 'Total Fee', 'Paid Amount', 'Due Amount', 'Payment Method', 'Transaction ID', 'Status', 'Due Date']
+  const csvData = filteredFeeData.map(fee => {
       const dueAmount = Number(fee.amount) - Number(fee.paid_amount)
       return [
         fee.students?.student_id || '',
         fee.students?.name || '',
+    fee.students?.gender || '',
         fee.students?.phone || '',
         fee.students?.departments?.name || '',
         fee.fee_year || '',
@@ -195,7 +204,7 @@ const Fees = () => {
       ]
     })
 
-    const csvContent = [headers, ...csvData]
+  const csvContent = [headersWithGender, ...csvData]
       .map(row => row.map(field => `"${field}"`).join(','))
       .join('\n')
 
@@ -268,6 +277,20 @@ const Fees = () => {
                   <SelectItem value="paid">Paid</SelectItem>
                   <SelectItem value="partial">Partial</SelectItem>
                   <SelectItem value="overdue">Overdue</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium text-foreground">Gender:</label>
+              <Select value={genderFilter} onValueChange={setGenderFilter}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="Male">Male</SelectItem>
+                  <SelectItem value="Female">Female</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -360,7 +383,7 @@ const Fees = () => {
                         <TableCell>
                           <div className="flex flex-col">
                             <span className="font-medium">{fee.students?.name}</span>
-                            <span className="text-xs text-muted-foreground">{fee.students?.student_id}</span>
+                              <span className="text-xs text-muted-foreground">{fee.students?.student_id} • {fee.students?.gender || 'N/A'}</span>
                           </div>
                         </TableCell>
                         <TableCell>

@@ -34,11 +34,11 @@ import { useToast } from "@/hooks/use-toast"
 const studentSchema = z.object({
   student_id: z.string().min(1, "Student ID is required"),
   name: z.string().min(1, "Name is required"),
+  gender: z.string().min(1, "Gender is required"),
   phone: z.string().min(1, "Phone number is required"),
   email: z.string().email().optional().or(z.literal("")),
   parent_name: z.string().min(1, "Parent's name is required"),
   parent_phone: z.string().min(1, "Parent's phone number is required"),
-  phone: z.string().min(1, "Phone number is required"),
   parent_phone: z.string().optional(),
   address: z.string().optional(),
   year: z.string().min(1, "Year is required"),
@@ -64,6 +64,7 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
     defaultValues: {
       student_id: "",
       name: "",
+  gender: "",
       phone: "",
       email: "",
       parent_name: "",
@@ -81,6 +82,7 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
     try {
       const { error } = await supabase.from("students").insert({
         student_id: data.student_id,
+  gender: data.gender,
         name: data.name,
         phone: data.phone || null,
         email: data.email || null,
@@ -153,6 +155,29 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
                   <FormControl>
                     <Input placeholder="Enter full name" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="gender"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Gender</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Male">Male</SelectItem>
+                      <SelectItem value="Female">Female</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

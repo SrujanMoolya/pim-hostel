@@ -36,6 +36,7 @@ const Students = () => {
   const [searchQuery, setSearchQuery] = useState("")
   const [yearFilter, setYearFilter] = useState("all")
   const [departmentFilter, setDepartmentFilter] = useState("all")
+  const [genderFilter, setGenderFilter] = useState("all")
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
@@ -78,9 +79,10 @@ const Students = () => {
                          student.room_number?.toLowerCase().includes(searchQuery.toLowerCase())
     
     const matchesYear = yearFilter === "all" || student.year.toString() === yearFilter
-    const matchesDepartment = departmentFilter === "all" || student.departments?.name === departmentFilter
+  const matchesDepartment = departmentFilter === "all" || student.departments?.name === departmentFilter
+  const matchesGender = genderFilter === "all" || (student.gender || '').toLowerCase() === genderFilter.toLowerCase()
 
-    return matchesSearch && matchesYear && matchesDepartment
+  return matchesSearch && matchesYear && matchesDepartment && matchesGender
   })
 
   const getFeeStatus = (fees: any[]) => {
@@ -187,6 +189,17 @@ const Students = () => {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={genderFilter} onValueChange={setGenderFilter}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Gender" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Genders</SelectItem>
+                <SelectItem value="Male">Male</SelectItem>
+                <SelectItem value="Female">Female</SelectItem>
+                <SelectItem value="Other">Other</SelectItem>
+              </SelectContent>
+            </Select>
             <Button variant="outline">
               <Filter className="h-4 w-4 mr-2" />
               More Filters
@@ -207,6 +220,7 @@ const Students = () => {
                 <TableRow>
                   <TableHead>Student ID</TableHead>
                   <TableHead>Name</TableHead>
+                  <TableHead>Gender</TableHead>
                   <TableHead>Department</TableHead>
                   <TableHead>College</TableHead>
                   <TableHead>Year</TableHead>
@@ -241,6 +255,7 @@ const Students = () => {
                           </span>
                         </div>
                       </TableCell>
+                      <TableCell>{student.gender || 'N/A'}</TableCell>
                       <TableCell>{student.departments?.name}</TableCell>
                       <TableCell>
                         <Badge variant="secondary">{student.college || 'Not Set'}</Badge>

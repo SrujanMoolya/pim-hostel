@@ -34,6 +34,7 @@ import { useToast } from "@/hooks/use-toast"
 const studentSchema = z.object({
   student_id: z.string().min(1, "Student ID is required"),
   name: z.string().min(1, "Name is required"),
+  gender: z.string().min(1, "Gender is required"),
   email: z.string().email().optional().or(z.literal("")),
   phone: z.string().min(1, "Phone number is required"),
   parent_phone: z.string().optional(),
@@ -63,6 +64,7 @@ export const EditStudentDialog = ({ student, departments, children }: EditStuden
     defaultValues: {
       student_id: "",
       name: "",
+  gender: "",
       email: "",
       phone: "",
       parent_phone: "",
@@ -79,6 +81,7 @@ export const EditStudentDialog = ({ student, departments, children }: EditStuden
       form.reset({
         student_id: student.student_id || "",
         name: student.name || "",
+  gender: student.gender || "",
         email: student.email || "",
         phone: student.phone || "",
         parent_phone: student.parent_phone || "",
@@ -97,6 +100,7 @@ export const EditStudentDialog = ({ student, departments, children }: EditStuden
       const { error } = await supabase
         .from("students")
         .update({
+          gender: data.gender,
           student_id: data.student_id,
           name: data.name,
           email: data.email || null,
@@ -168,6 +172,29 @@ export const EditStudentDialog = ({ student, departments, children }: EditStuden
                   <FormControl>
                     <Input placeholder="Enter full name" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="gender"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Gender</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Male">Male</SelectItem>
+                      <SelectItem value="Female">Female</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
