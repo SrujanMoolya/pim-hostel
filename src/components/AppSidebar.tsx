@@ -39,6 +39,11 @@ const navigationItems = [
     url: "/fees", 
     icon: CreditCard 
   },
+  {
+    title: "Room",
+    url: "/rooms",
+    icon: Building2
+  },
   { 
     title: "Settings", 
     url: "/settings", 
