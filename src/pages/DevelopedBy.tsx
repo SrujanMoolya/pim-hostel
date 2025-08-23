@@ -100,6 +100,9 @@ export default function DevelopedBy() {
       <div className="mt-8 text-sm text-muted-foreground">
         Developed by MCA batch 2024-2026 for PIM - Poornaprajna Institute of Management
       </div>
+      <div className="mt-4 text-sm text-muted-foreground">
+        Developed by Svvaap Innovations and Team
+      </div>
     </div>
   );
 }
