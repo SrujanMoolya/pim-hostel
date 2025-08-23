@@ -34,7 +34,10 @@ import { useToast } from "@/hooks/use-toast"
 const studentSchema = z.object({
   student_id: z.string().min(1, "Student ID is required"),
   name: z.string().min(1, "Name is required"),
+  phone: z.string().min(1, "Phone number is required"),
   email: z.string().email().optional().or(z.literal("")),
+  parent_name: z.string().min(1, "Parent's name is required"),
+  parent_phone: z.string().min(1, "Parent's phone number is required"),
   phone: z.string().min(1, "Phone number is required"),
   parent_phone: z.string().optional(),
   address: z.string().optional(),
@@ -61,8 +64,9 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
     defaultValues: {
       student_id: "",
       name: "",
-      email: "",
       phone: "",
+      email: "",
+      parent_name: "",
       parent_phone: "",
       address: "",
       year: "",
@@ -78,7 +82,10 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
       const { error } = await supabase.from("students").insert({
         student_id: data.student_id,
         name: data.name,
+        phone: data.phone || null,
         email: data.email || null,
+        parent_name: data.parent_name,
+        parent_phone: data.parent_phone,
         phone: data.phone || null,
         parent_phone: data.parent_phone || null,
         address: data.address || null,
@@ -152,19 +159,6 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
             />
             <FormField
               control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email (Optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter email" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
               name="phone"
               render={({ field }) => (
                 <FormItem>
@@ -178,12 +172,38 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
             />
             <FormField
               control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter email" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="parent_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Parent's Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter parent's name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="parent_phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Parent Phone (Optional)</FormLabel>
+                  <FormLabel>Parent's Phone Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter parent phone number" {...field} />
+                    <Input placeholder="Enter parent's phone number" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -218,6 +238,7 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
                       <SelectItem value="PIM">PIM</SelectItem>
                       <SelectItem value="PPC">PPC</SelectItem>
                       <SelectItem value="PPC Evening">PPC Evening</SelectItem>
+                      <SelectItem value="PG">PG</SelectItem>
                       <SelectItem value="Other">Other</SelectItem>
                     </SelectContent>
                   </Select>
