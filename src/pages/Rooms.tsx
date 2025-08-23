@@ -4,6 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
+interface Student {
+  id: string;
+  name: string;
+  student_id: string;
+  room_number?: string;
+}
+
 const Rooms = () => {
   const queryClient = useQueryClient();
   const { data: students = [], isLoading } = useQuery({
@@ -16,7 +23,7 @@ const Rooms = () => {
   });
 
   // Group students by room number
-  const rooms = students.reduce((acc, student) => {
+  const rooms = students.reduce((acc: Record<string, Student[]>, student: Student) => {
     const room = student.room_number || "Not Assigned";
     if (!acc[room]) acc[room] = [];
     acc[room].push(student);
@@ -30,7 +37,7 @@ const Rooms = () => {
 
   // Mutation to update student's room_number
   const allotStudentMutation = useMutation({
-    mutationFn: async ({ studentId, room }) => {
+    mutationFn: async ({ studentId, room }: { studentId: string; room: string }) => {
       const { error } = await supabase
         .from("students")
         .update({ room_number: room })
@@ -38,7 +45,7 @@ const Rooms = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["students"]);
+      queryClient.invalidateQueries({ queryKey: ["students"] });
       setShowModal(false);
       setSelectedStudentId("");
       setSelectedRoom("");
