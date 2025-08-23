@@ -68,8 +68,6 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
       email: "",
       parent_name: "",
       parent_phone: "",
-      phone: "",
-      parent_phone: "",
       address: "",
       year: "",
       department_id: "",
@@ -187,12 +185,12 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
             />
             <FormField
               control={form.control}
-              name="phone"
+              name="parent_name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone *</FormLabel>
+                  <FormLabel>Parent's Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter parent's phone number" {...field} />
+                    <Input placeholder="Enter parent's name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -203,9 +201,9 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
               name="parent_phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Parent Phone (Optional)</FormLabel>
+                  <FormLabel>Parent's Phone Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter parent phone number" {...field} />
+                    <Input placeholder="Enter parent's phone number" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
