@@ -110,7 +110,7 @@ const Rooms = () => {
             </select>
             <div className="flex gap-2">
               <button
-                className="px-4 py-2 bg-orange-500 text-white rounded"
+                className="px-4 py-2 bg-orange-500 text-white rounded-full"
                 disabled={!selectedStudentId}
                 onClick={() => {
                   allotStudentMutation.mutate({ studentId: selectedStudentId, room: selectedRoom });
@@ -119,7 +119,7 @@ const Rooms = () => {
                 Allot
               </button>
               <button
-                className="px-4 py-2 bg-gray-300 rounded"
+                className="px-4 py-2 bg-gray-300 rounded-full"
                 onClick={() => setShowModal(false)}
               >
                 Cancel
