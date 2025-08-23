@@ -1,52 +1,57 @@
 import React from "react";
+import { Linkedin } from "lucide-react"
 
 const workDistribution = [
   {
     name: "Srujan Moolya",
+    linkedin: "https://www.linkedin.com/in/srujan-moolya",
     work: [
       "Project architecture & setup",
       "Authentication & Supabase integration",
       "Dashboard UI/UX",
-      "Student management module"
-    ]
+      "Student management module",
+    ],
   },
-   {
+  {
     name: "Aneesh Bhat",
+    linkedin: "https://www.linkedin.com/in/aneesh-bhat",
     work: [
       "Responsive design",
       "Accessibility improvements",
       "Performance optimization",
-      "Deployment scripts"
-    ]
+      "Deployment scripts",
+    ],
   },
   {
     name: "Neelanjan V",
+    linkedin: "",
     work: [
       "Fees management module",
       "Payment records & dialogs",
       "UI components (forms, dialogs)",
-      "Testing & bug fixes"
-    ]
+      "Testing & bug fixes",
+    ],
   },
   {
     name: "Vishal Shetty",
+    linkedin: "",
     work: [
       "Settings & configuration pages",
       "Sidebar & navigation",
       "Reusable UI components",
-      "Documentation"
-    ]
+      "Documentation",
+    ],
   },
- 
   {
     name: "Dheeraj Kumar",
+    linkedin: "",
     work: [
       "Database schema & migrations",
       "Supabase backend setup",
       "API integration",
-      "Testing & QA"
-    ]
-  }
+      "Testing & QA",
+    ],
+  },
 ];
 
 const techStack = [
@@ -66,11 +71,24 @@ export default function DevelopedBy() {
       <p className="mb-6 text-lg">MCA Batch 2024-2026<br/>Poornaprajna Institute of Management</p>
       <h2 className="text-xl font-semibold mb-2">Team Members & Work Distribution</h2>
       <ul className="mb-6 space-y-4">
-        {workDistribution.map(dev => (
+        {workDistribution.map((dev) => (
           <li key={dev.name}>
-            <span className="font-semibold">{dev.name}</span>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold">{dev.name}</span>
+              {dev.linkedin ? (
+                <a href={dev.linkedin} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary">
+                  <Linkedin className="h-4 w-4" />
+                </a>
+              ) : (
+                <span className="text-muted-foreground opacity-40">
+                  <Linkedin className="h-4 w-4" />
+                </span>
+              )}
+            </div>
             <ul className="list-disc list-inside ml-4 text-sm text-muted-foreground">
-              {dev.work.map(w => <li key={w}>{w}</li>)}
+              {dev.work.map((w) => (
+                <li key={w}>{w}</li>
+              ))}
             </ul>
           </li>
         ))}

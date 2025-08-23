@@ -20,8 +20,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { supabase } from "@/integrations/supabase/client"
+import { Input } from "@/components/ui/input"
 import { useQuery } from "@tanstack/react-query"
 import { RecordPaymentDialog } from "@/components/RecordPaymentDialog"
+import { StudentDetailDialog } from "@/components/StudentDetailDialog"
 import { PaymentDialog } from "@/components/PaymentDialog"
 
 const Fees = () => {
@@ -30,6 +32,7 @@ const Fees = () => {
   const [showMoreFilters, setShowMoreFilters] = useState(false)
   const [departmentFilter, setDepartmentFilter] = useState("all")
   const [feeYearFilter, setFeeYearFilter] = useState("all")
+  const [searchQuery, setSearchQuery] = useState("")
 
   // Fetch fees with student and department info
   const { data: feeData = [], isLoading } = useQuery({
@@ -40,6 +43,7 @@ const Fees = () => {
         .select(`
           *,
           students (
+            id,
             student_id,
             name,
             phone,
@@ -66,10 +70,25 @@ const Fees = () => {
   })
 
   // Apply department filter client-side since we need to filter by joined data
-  const filteredFeeData = feeData.filter(fee => {
-    if (departmentFilter !== "all") {
-      return fee.students?.departments?.name === departmentFilter
+  const filteredFeeData = feeData.filter((fee) => {
+    // Department filter
+    if (departmentFilter !== "all" && fee.students?.departments?.name !== departmentFilter) {
+      return false
     }
+
+    // Search filter: student name, student id, phone, transaction id
+    if (searchQuery.trim() !== "") {
+      const q = searchQuery.trim().toLowerCase()
+      const name = (fee.students?.name || "").toLowerCase()
+      const sid = (fee.students?.student_id || "").toLowerCase()
+      const phone = (fee.students?.phone || "").toLowerCase()
+      const tx = (fee.transaction_id || "").toLowerCase()
+
+      if (!(name.includes(q) || sid.includes(q) || phone.includes(q) || tx.includes(q))) {
+        return false
+      }
+    }
+
     return true
   })
 
@@ -222,6 +241,9 @@ const Fees = () => {
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col space-y-4 md:flex-row md:items-center md:space-y-0 md:space-x-4">
+            <div className="flex items-center space-x-2">
+              <Input placeholder="Search by name, id, phone, txn" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            </div>
             <div className="flex items-center space-x-2">
               <label className="text-sm font-medium text-foreground">Academic Year:</label>
               <Select value={academicYear} onValueChange={setAcademicYear}>
@@ -385,9 +407,11 @@ const Fees = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end space-x-2">
-                            <Button variant="outline" size="sm">
-                              View Details
-                            </Button>
+                            <StudentDetailDialog student={fee.students}>
+                              <Button variant="outline" size="sm">
+                                View Details
+                              </Button>
+                            </StudentDetailDialog>
                             {dueAmount > 0 && (
                               <PaymentDialog fee={fee} />
                             )}
