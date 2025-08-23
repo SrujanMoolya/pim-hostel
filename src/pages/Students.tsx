@@ -3,6 +3,7 @@ import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Eye } from "lucide-
 import { Button } from "@/components/ui/button"
 import { AddStudentDialog } from "@/components/AddStudentDialog"
 import { EditStudentDialog } from "@/components/EditStudentDialog"
+import { StudentDetailDialog } from "@/components/StudentDetailDialog"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -258,10 +259,14 @@ const Students = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Details
-                          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <StudentDetailDialog student={student}>
+              <div className="flex items-center w-full">
+                <Eye className="mr-2 h-4 w-4" />
+                View Details
+              </div>
+            </StudentDetailDialog>
+          </DropdownMenuItem>
                           <EditStudentDialog student={student} departments={departments}>
                             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                               <Edit className="mr-2 h-4 w-4" />

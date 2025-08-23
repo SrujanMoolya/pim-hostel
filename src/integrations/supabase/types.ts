@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      colleges: {
+        Row: {
+          address: string | null
+          code: string
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          code: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          code?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       departments: {
         Row: {
           code: string
@@ -94,8 +127,45 @@ export type Database = {
           },
         ]
       }
+      rooms: {
+        Row: {
+          amenities: string[] | null
+          capacity: number
+          created_at: string
+          floor_number: number | null
+          id: string
+          room_number: string
+          room_type: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          amenities?: string[] | null
+          capacity?: number
+          created_at?: string
+          floor_number?: number | null
+          id?: string
+          room_number: string
+          room_type?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amenities?: string[] | null
+          capacity?: number
+          created_at?: string
+          floor_number?: number | null
+          id?: string
+          room_number?: string
+          room_type?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       students: {
         Row: {
+          address: string | null
           admission_date: string | null
           college: string | null
           created_at: string
@@ -103,6 +173,7 @@ export type Database = {
           email: string | null
           id: string
           name: string
+          parent_phone: string | null
           phone: string | null
           room_number: string | null
           status: string | null
@@ -111,6 +182,7 @@ export type Database = {
           year: number
         }
         Insert: {
+          address?: string | null
           admission_date?: string | null
           college?: string | null
           created_at?: string
@@ -118,6 +190,7 @@ export type Database = {
           email?: string | null
           id?: string
           name: string
+          parent_phone?: string | null
           phone?: string | null
           room_number?: string | null
           status?: string | null
@@ -126,6 +199,7 @@ export type Database = {
           year: number
         }
         Update: {
+          address?: string | null
           admission_date?: string | null
           college?: string | null
           created_at?: string
@@ -133,6 +207,7 @@ export type Database = {
           email?: string | null
           id?: string
           name?: string
+          parent_phone?: string | null
           phone?: string | null
           room_number?: string | null
           status?: string | null
