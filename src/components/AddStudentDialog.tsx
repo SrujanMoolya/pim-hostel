@@ -118,7 +118,7 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
           Add New Student
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+  <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Student</DialogTitle>
         </DialogHeader>

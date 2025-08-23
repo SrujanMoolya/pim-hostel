@@ -10,6 +10,15 @@ const workDistribution = [
       "Student management module"
     ]
   },
+   {
+    name: "Aneesh Bhat",
+    work: [
+      "Responsive design",
+      "Accessibility improvements",
+      "Performance optimization",
+      "Deployment scripts"
+    ]
+  },
   {
     name: "Neelanjan V",
     work: [
@@ -28,15 +37,7 @@ const workDistribution = [
       "Documentation"
     ]
   },
-  {
-    name: "Aneesh Bhat",
-    work: [
-      "Responsive design",
-      "Accessibility improvements",
-      "Performance optimization",
-      "Deployment scripts"
-    ]
-  },
+ 
   {
     name: "Dheeraj Kumar",
     work: [

@@ -259,7 +259,7 @@ const Students = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-          <DropdownMenuItem>
+          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
             <StudentDetailDialog student={student}>
               <div className="flex items-center w-full">
                 <Eye className="mr-2 h-4 w-4" />
