@@ -36,6 +36,8 @@ const studentSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email().optional().or(z.literal("")),
   phone: z.string().min(1, "Phone number is required"),
+  parent_phone: z.string().optional(),
+  address: z.string().optional(),
   year: z.string().min(1, "Year is required"),
   department_id: z.string().min(1, "Department is required"),
   college: z.string().min(1, "College is required"),
@@ -61,6 +63,8 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
       name: "",
       email: "",
       phone: "",
+      parent_phone: "",
+      address: "",
       year: "",
       department_id: "",
       college: "",
@@ -76,6 +80,8 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
         name: data.name,
         email: data.email || null,
         phone: data.phone || null,
+        parent_phone: data.parent_phone || null,
+        address: data.address || null,
         year: parseInt(data.year),
         department_id: data.department_id,
         college: data.college,
@@ -165,6 +171,32 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
                   <FormLabel>Phone *</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter phone number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="parent_phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Parent Phone (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter parent phone number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Address (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter address" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

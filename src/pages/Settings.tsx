@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-import AccountsManager from "./AccountsManager"
+import AccountsManager from "@/components/AccountsManager"
 import CollegeDepartmentManager from "@/components/CollegeDepartmentManager"
 import DataManager from "@/components/DataManager"
 
