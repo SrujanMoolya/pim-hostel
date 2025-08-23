@@ -34,8 +34,10 @@ import { useToast } from "@/hooks/use-toast"
 const studentSchema = z.object({
   student_id: z.string().min(1, "Student ID is required"),
   name: z.string().min(1, "Name is required"),
-  email: z.string().email().optional().or(z.literal("")),
   phone: z.string().min(1, "Phone number is required"),
+  email: z.string().email().optional().or(z.literal("")),
+  parent_name: z.string().min(1, "Parent's name is required"),
+  parent_phone: z.string().min(1, "Parent's phone number is required"),
   year: z.string().min(1, "Year is required"),
   department_id: z.string().min(1, "Department is required"),
   college: z.string().min(1, "College is required"),
@@ -59,8 +61,10 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
     defaultValues: {
       student_id: "",
       name: "",
-      email: "",
       phone: "",
+      email: "",
+      parent_name: "",
+      parent_phone: "",
       year: "",
       department_id: "",
       college: "",
@@ -74,8 +78,10 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
       const { error } = await supabase.from("students").insert({
         student_id: data.student_id,
         name: data.name,
-        email: data.email || null,
         phone: data.phone || null,
+        email: data.email || null,
+        parent_name: data.parent_name,
+        parent_phone: data.parent_phone,
         year: parseInt(data.year),
         department_id: data.department_id,
         college: data.college,
@@ -112,7 +118,7 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
           Add New Student
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Student</DialogTitle>
         </DialogHeader>
@@ -146,10 +152,23 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
             />
             <FormField
               control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter phone number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email (Optional)</FormLabel>
+                  <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter email" {...field} />
                   </FormControl>
@@ -159,12 +178,25 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
             />
             <FormField
               control={form.control}
-              name="phone"
+              name="parent_name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone *</FormLabel>
+                  <FormLabel>Parent's Name </FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter phone number" {...field} />
+                    <Input placeholder="Enter parent's name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="parent_phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Parent's Phone Number *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter parent's phone number" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -186,6 +218,7 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
                       <SelectItem value="PIM">PIM</SelectItem>
                       <SelectItem value="PPC">PPC</SelectItem>
                       <SelectItem value="PPC Evening">PPC Evening</SelectItem>
+                      <SelectItem value="PG">PG</SelectItem>
                       <SelectItem value="Other">Other</SelectItem>
                     </SelectContent>
                   </Select>
@@ -245,7 +278,7 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
               name="room_number"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Room Number (Optional)</FormLabel>
+                  <FormLabel>Room Number</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter room number" {...field} />
                   </FormControl>
