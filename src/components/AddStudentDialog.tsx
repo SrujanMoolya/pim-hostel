@@ -28,7 +28,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { supabase } from "@/integrations/supabase/client"
-import { useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
 
 const studentSchema = z.object({
@@ -38,7 +38,6 @@ const studentSchema = z.object({
   phone: z.string().min(1, "Phone number is required"),
   email: z.string().email().optional().or(z.literal("")),
   parent_name: z.string().min(1, "Parent's name is required"),
-  parent_phone: z.string().min(1, "Parent's phone number is required"),
   parent_phone: z.string().optional(),
   address: z.string().optional(),
   year: z.string().min(1, "Year is required"),
@@ -59,6 +58,26 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
+  // Fetch rooms for dropdown
+  const { data: rooms = [] } = useQuery({
+    queryKey: ["rooms"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("rooms").select("*").order("room_number")
+      if (error) throw error
+      return data || []
+    },
+  })
+
+  // Fetch students to compute occupancy (use a separate cache key to avoid clobbering full students data)
+  const { data: students = [] } = useQuery({
+    queryKey: ["students-mini"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("students").select("id,room_number")
+      if (error) throw error
+      return data || []
+    },
+  })
+
   const form = useForm<StudentFormData>({
     resolver: zodResolver(studentSchema),
     defaultValues: {
@@ -73,7 +92,7 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
       year: "",
       department_id: "",
       college: "",
-      room_number: "",
+  room_number: "none",
     },
   })
 
@@ -82,19 +101,17 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
     try {
       const { error } = await supabase.from("students").insert({
         student_id: data.student_id,
-  gender: data.gender,
+        gender: data.gender,
         name: data.name,
         phone: data.phone || null,
         email: data.email || null,
         parent_name: data.parent_name,
-        parent_phone: data.parent_phone,
-        phone: data.phone || null,
         parent_phone: data.parent_phone || null,
         address: data.address || null,
         year: parseInt(data.year),
         department_id: data.department_id,
         college: data.college,
-        room_number: data.room_number || null,
+        room_number: data.room_number && data.room_number !== 'none' ? data.room_number : null,
         admission_date: new Date().toISOString().split('T')[0],
       })
 
@@ -106,6 +123,26 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
       })
 
       queryClient.invalidateQueries({ queryKey: ["students"] })
+  queryClient.invalidateQueries({ queryKey: ["students-mini"] })
+  queryClient.invalidateQueries({ queryKey: ["rooms"] })
+      // If assigned to a room, update that room's status depending on occupancy
+      const assignedRoom = data.room_number && data.room_number !== 'none' ? data.room_number : null
+      if (assignedRoom) {
+        try {
+          // get current occupancy for that room from server
+          const { data: occData, error: occErr } = await supabase.from('students').select('id').eq('room_number', assignedRoom)
+          if (occErr) throw occErr
+          const occCount = occData ? occData.length : 0
+          const room = rooms.find((r: any) => r.room_number === assignedRoom)
+          if (room) {
+            const status = occCount >= room.capacity ? 'full' : 'available'
+            await supabase.from('rooms').update({ status }).eq('room_number', assignedRoom)
+            queryClient.invalidateQueries({ queryKey: ['rooms'] })
+          }
+        } catch (err) {
+          // non-fatal — just continue
+        }
+      }
       form.reset()
       setOpen(false)
     } catch (error: any) {
@@ -323,10 +360,31 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
               name="room_number"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Room Number (Optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter room number" {...field} />
-                  </FormControl>
+                  <FormLabel>Room</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select room (optional)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="none">No Room Assigned</SelectItem>
+                      {rooms
+                        .filter((room: any) => {
+                          const occ = (students || []).filter((s: any) => s.room_number === room.room_number).length
+                          return occ < room.capacity
+                        })
+                        .map((room: any) => {
+                          const occ = (students || []).filter((s: any) => s.room_number === room.room_number).length
+                          const available = Math.max(0, room.capacity - occ)
+                          return (
+                            <SelectItem key={room.id} value={room.room_number}>
+                              {room.room_number} (capacity : {available})
+                            </SelectItem>
+                          )
+                        })}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

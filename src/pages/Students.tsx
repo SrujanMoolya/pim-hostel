@@ -73,16 +73,17 @@ const Students = () => {
     }
   })
 
-  const filteredStudents = studentsData.filter(student => {
-    const matchesSearch = student.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         student.student_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         student.room_number?.toLowerCase().includes(searchQuery.toLowerCase())
-    
-    const matchesYear = yearFilter === "all" || student.year.toString() === yearFilter
-  const matchesDepartment = departmentFilter === "all" || student.departments?.name === departmentFilter
-  const matchesGender = genderFilter === "all" || (student.gender || '').toLowerCase() === genderFilter.toLowerCase()
+  // cast to any[] because supabase row typing may not include all optional columns
+  const filteredStudents = (studentsData as any[]).filter((student: any) => {
+    const matchesSearch = (student.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (student.student_id || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (student.room_number || "").toLowerCase().includes(searchQuery.toLowerCase())
 
-  return matchesSearch && matchesYear && matchesDepartment && matchesGender
+    const matchesYear = yearFilter === "all" || String(student.year) === String(yearFilter)
+    const matchesDepartment = departmentFilter === "all" || student.departments?.name === departmentFilter
+    const matchesGender = genderFilter === "all" || ((student.gender || '').toLowerCase() === genderFilter.toLowerCase())
+
+    return matchesSearch && matchesYear && matchesDepartment && matchesGender
   })
 
   const getFeeStatus = (fees: any[]) => {
@@ -233,18 +234,18 @@ const Students = () => {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-4">
+                    <TableCell colSpan={10} className="text-center py-4">
                       Loading students...
                     </TableCell>
                   </TableRow>
                 ) : filteredStudents.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-4">
+                    <TableCell colSpan={10} className="text-center py-4">
                       No students found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredStudents.map((student) => (
+                  filteredStudents.map((student: any) => (
                     <TableRow key={student.id} className="hover:bg-muted/50">
                       <TableCell className="font-medium">{student.student_id}</TableCell>
                       <TableCell>

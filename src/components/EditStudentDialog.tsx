@@ -28,7 +28,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { supabase } from "@/integrations/supabase/client"
-import { useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
 
 const studentSchema = z.object({
@@ -58,6 +58,26 @@ export const EditStudentDialog = ({ student, departments, children }: EditStuden
   const [isLoading, setIsLoading] = useState(false)
   const queryClient = useQueryClient()
   const { toast } = useToast()
+
+  // Fetch rooms for dropdown
+  const { data: rooms = [] } = useQuery({
+    queryKey: ["rooms"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("rooms").select("*").order("room_number")
+      if (error) throw error
+      return data || []
+    },
+  })
+
+  // Fetch students to compute occupancy (use a separate cache key to avoid clobbering full students data)
+  const { data: students = [] } = useQuery({
+    queryKey: ["students-mini"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("students").select("id,room_number")
+      if (error) throw error
+      return data || []
+    },
+  })
 
   const form = useForm<StudentFormData>({
     resolver: zodResolver(studentSchema),
@@ -89,7 +109,7 @@ export const EditStudentDialog = ({ student, departments, children }: EditStuden
         year: student.year?.toString() || "",
         department_id: student.department_id || "",
         college: student.college || "",
-        room_number: student.room_number || "",
+  room_number: student.room_number || "none",
       })
     }
   }, [student, open, form])
@@ -110,7 +130,7 @@ export const EditStudentDialog = ({ student, departments, children }: EditStuden
           year: parseInt(data.year),
           department_id: data.department_id,
           college: data.college,
-          room_number: data.room_number || null,
+          room_number: data.room_number && data.room_number !== 'none' ? data.room_number : null,
         })
         .eq("id", student.id)
 
@@ -123,6 +143,27 @@ export const EditStudentDialog = ({ student, departments, children }: EditStuden
 
       queryClient.invalidateQueries({ queryKey: ["students"] })
       setOpen(false)
+      // If room assignment changed, update statuses for old and new rooms
+      try {
+        const oldRoom = student.room_number || null
+        const newRoom = data.room_number && data.room_number !== 'none' ? data.room_number : null
+        const affected = Array.from(new Set([oldRoom, newRoom].filter(Boolean)))
+        for (const rn of affected) {
+          const { data: occData, error: occErr } = await supabase.from('students').select('id').eq('room_number', rn)
+          if (occErr) continue
+          const occCount = occData ? occData.length : 0
+          const room = rooms.find((r: any) => r.room_number === rn)
+          if (room) {
+            const status = occCount >= room.capacity ? 'full' : 'available'
+            await supabase.from('rooms').update({ status }).eq('room_number', rn)
+          }
+        }
+  queryClient.invalidateQueries({ queryKey: ['rooms'] })
+  queryClient.invalidateQueries({ queryKey: ['students-mini'] })
+  queryClient.invalidateQueries({ queryKey: ['students'] })
+      } catch (err) {
+        // non-fatal
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -326,10 +367,32 @@ export const EditStudentDialog = ({ student, departments, children }: EditStuden
               name="room_number"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Room Number (Optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter room number" {...field} />
-                  </FormControl>
+                  <FormLabel>Room</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select room (optional)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="none">No Room Assigned</SelectItem>
+                      {rooms
+                        .filter((room: any) => {
+                          const occ = (students || []).filter((s: any) => s.room_number === room.room_number).length
+                          // allow if has space or it's the student's current room
+                          return occ < room.capacity || room.room_number === student.room_number
+                        })
+                        .map((room: any) => {
+                          const occ = (students || []).filter((s: any) => s.room_number === room.room_number).length
+                          const available = Math.max(0, room.capacity - occ)
+                          return (
+                            <SelectItem key={room.id} value={room.room_number}>
+                              {room.room_number} (capacity : {available})
+                            </SelectItem>
+                          )
+                        })}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
