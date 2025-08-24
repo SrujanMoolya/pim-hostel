@@ -72,7 +72,7 @@ const Fees = () => {
   })
 
   // Apply department filter client-side since we need to filter by joined data
-  const filteredFeeData = feeData.filter((fee) => {
+  const filteredFeeData = (feeData as any[]).filter((fee: any) => {
     // Department filter
     if (departmentFilter !== "all" && fee.students?.departments?.name !== departmentFilter) {
       return false
@@ -85,11 +85,11 @@ const Fees = () => {
 
     // Search filter: student name, student id, phone, transaction id
     if (searchQuery.trim() !== "") {
-      const q = searchQuery.trim().toLowerCase()
-      const name = (fee.students?.name || "").toLowerCase()
-      const sid = (fee.students?.student_id || "").toLowerCase()
-      const phone = (fee.students?.phone || "").toLowerCase()
-      const tx = (fee.transaction_id || "").toLowerCase()
+  const q = searchQuery.trim().toLowerCase()
+  const name = ((fee.students as any)?.name || "").toLowerCase()
+  const sid = ((fee.students as any)?.student_id || "").toLowerCase()
+  const phone = ((fee.students as any)?.phone || "").toLowerCase()
+  const tx = (fee.transaction_id || "").toLowerCase()
 
       if (!(name.includes(q) || sid.includes(q) || phone.includes(q) || tx.includes(q))) {
         return false
@@ -183,29 +183,77 @@ const Fees = () => {
   }
 
   const exportToCSV = () => {
-    const headers = ['Student ID', 'Student Name', 'Phone', 'Department', 'Fee Year', 'Total Fee', 'Paid Amount', 'Due Amount', 'Payment Method', 'Transaction ID', 'Status', 'Due Date']
-  const headersWithGender = ['Student ID', 'Student Name', 'Gender', 'Phone', 'Department', 'Fee Year', 'Total Fee', 'Paid Amount', 'Due Amount', 'Payment Method', 'Transaction ID', 'Status', 'Due Date']
-  const csvData = filteredFeeData.map(fee => {
-      const dueAmount = Number(fee.amount) - Number(fee.paid_amount)
-      return [
-        fee.students?.student_id || '',
-        fee.students?.name || '',
-    fee.students?.gender || '',
-        fee.students?.phone || '',
-        fee.students?.departments?.name || '',
-        fee.fee_year || '',
-        fee.amount,
-        fee.paid_amount,
-        dueAmount,
-        fee.payment_method || 'Cash',
-        fee.transaction_id || '',
-        fee.status,
-        new Date(fee.due_date).toLocaleDateString()
-      ]
-    })
+    const headers = [
+      'Student ID',
+      'Student Name',
+      'Gender',
+      'Email',
+      'Phone',
+      'Parent Name',
+      'Parent Phone',
+      'Address',
+      'Department',
+      'Department Code',
+      'Year',
+      'Room',
+      'College',
+      'Admission Date',
+      'Created At',
+      'Student Status',
+      'Fee Year',
+      'Total Fee',
+      'Paid Amount',
+      'Due Amount',
+      'Payment Method',
+      'Transaction ID',
+      'Status',
+      'Due Date'
+    ]
 
-  const csvContent = [headersWithGender, ...csvData]
-      .map(row => row.map(field => `"${field}"`).join(','))
+    // Order rows by gender: Female first, then Male, then Other/unspecified
+    const genderOrder = (g: string) => {
+      if (!g) return 3
+      const x = g.toString().toLowerCase()
+      if (x === 'female' || x === 'f') return 0
+      if (x === 'male' || x === 'm') return 1
+      return 2
+    }
+
+  const csvRows = filteredFeeData
+      .slice()
+      .sort((a, b) => genderOrder(a.students?.gender || '') - genderOrder(b.students?.gender || ''))
+      .map(fee => {
+        const dueAmount = Number(fee.amount) - Number(fee.paid_amount)
+        return [
+      (fee.students as any)?.student_id || '',
+      (fee.students as any)?.name || '',
+      (fee.students as any)?.gender || '',
+      (fee.students as any)?.email || '',
+      (fee.students as any)?.phone || '',
+      (fee.students as any)?.parent_name || '',
+      (fee.students as any)?.parent_phone || '',
+      (fee.students as any)?.address || '',
+      (fee.students as any)?.departments?.name || '',
+      (fee.students as any)?.departments?.code || '',
+      (fee.students as any)?.year || '',
+      (fee.students as any)?.room_number || '',
+      (fee.students as any)?.college || '',
+      (fee.students as any)?.admission_date || (fee.students as any)?.created_at || '',
+      (fee.students as any)?.created_at || '',
+      (fee.students as any)?.status || '',
+      fee.fee_year || '',
+      fee.amount,
+      fee.paid_amount,
+      dueAmount,
+      fee.payment_method || 'Cash',
+      fee.transaction_id || '',
+      fee.status,
+      fee.due_date ? new Date(fee.due_date).toLocaleDateString() : ''
+        ]
+      })
+
+    const csvContent = [headers, ...csvRows]
+      .map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
       .join('\n')
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })

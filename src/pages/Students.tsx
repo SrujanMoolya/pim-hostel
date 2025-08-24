@@ -31,6 +31,7 @@ import {
 import { supabase } from "@/integrations/supabase/client"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
+import { Download } from "lucide-react"
 
 const Students = () => {
   const [searchQuery, setSearchQuery] = useState("")
@@ -39,6 +40,48 @@ const Students = () => {
   const [genderFilter, setGenderFilter] = useState("all")
   const queryClient = useQueryClient()
   const { toast } = useToast()
+
+  const exportStudentsToCSV = () => {
+    const headers = ['Student ID', 'Name', 'Gender', 'Email', 'Phone', 'Department', 'Year', 'Room', 'College', 'Admission Date']
+
+    const genderOrder = (g: string) => {
+      if (!g) return 3
+      const x = g.toString().toLowerCase()
+      if (x === 'female' || x === 'f') return 0
+      if (x === 'male' || x === 'm') return 1
+      return 2
+    }
+
+    const rows = (studentsData as any[])
+      .slice()
+      .sort((a, b) => genderOrder(a.gender || '') - genderOrder(b.gender || ''))
+      .map(s => [
+        s.student_id || '',
+        s.name || '',
+        s.gender || '',
+        s.email || '',
+        s.phone || '',
+        s.departments?.name || '',
+        s.year || '',
+        s.room_number || '',
+        s.college || '',
+        s.admission_date || s.created_at || ''
+      ])
+
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `students-export-${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
   // Fetch students with departments
   const { data: studentsData = [], isLoading } = useQuery({
@@ -149,7 +192,13 @@ const Students = () => {
             Manage student records, room assignments, and information
           </p>
         </div>
-        <AddStudentDialog departments={departments} />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => exportStudentsToCSV()}>
+            <Download className="h-4 w-4 mr-2" />
+            Export Report
+          </Button>
+          <AddStudentDialog departments={departments} />
+        </div>
       </div>
 
       {/* Filters and Search */}

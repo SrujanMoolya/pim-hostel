@@ -20,6 +20,7 @@ export default function AccountsManager() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [adminAvailable, setAdminAvailable] = useState(true);
 
   useEffect(() => {
     fetchAccounts();
@@ -28,16 +29,45 @@ export default function AccountsManager() {
   async function fetchAccounts() {
     setLoading(true);
     setError("");
-    const { data, error } = await supabase.auth.admin.listUsers();
-    setLoading(false);
-    if (error) setError(error.message);
-    else setAccounts(data.users.map((u: any) => ({ 
-      id: u.id, 
-      email: u.email,
-      email_confirmed_at: u.email_confirmed_at,
-      last_sign_in_at: u.last_sign_in_at,
-      created_at: u.created_at
-    })));
+    try {
+      const { data, error } = await supabase.auth.admin.listUsers();
+      setLoading(false);
+      if (error) throw error;
+      setAccounts(data.users.map((u: any) => ({ 
+        id: u.id, 
+        email: u.email,
+        email_confirmed_at: u.email_confirmed_at,
+        last_sign_in_at: u.last_sign_in_at,
+        created_at: u.created_at
+      })));
+      setAdminAvailable(true);
+    } catch (err: any) {
+      setLoading(false)
+      // If admin is not available (403), degrade gracefully
+      if (err && (err.status === 403 || (err.message && err.message.toLowerCase().includes('not allowed')))) {
+        setAdminAvailable(false)
+        // Admin API not available from client. Fall back to listing students table emails so UI shows registered accounts.
+        setError('Admin API not available from client. Showing registered emails from the students table. Admin actions require a server-side service key.')
+        try {
+          const { data: studentsData, error: studentsError } = await supabase.from('students').select('id, email, created_at');
+          if (studentsError) {
+            setAccounts([]);
+          } else {
+            setAccounts((studentsData as any[]).map(s => ({
+              id: s.id,
+              email: s.email || '',
+              email_confirmed_at: null,
+              last_sign_in_at: null,
+              created_at: s.created_at || ''
+            })));
+          }
+        } catch (e: any) {
+          setAccounts([]);
+        }
+      } else {
+        setError(err?.message || String(err))
+      }
+    }
   }
 
   async function handleAddAccount(e: React.FormEvent) {
@@ -50,23 +80,41 @@ export default function AccountsManager() {
     setLoading(true);
     setError("");
     setSuccess("");
-    const { data, error } = await supabase.auth.admin.createUser({ 
-      email, 
-      password,
-      email_confirm: true
-    });
-    setLoading(false);
-    if (error) setError(error.message);
-    else {
-      setSuccess("Account created successfully");
-      setEmail("");
-      setPassword("");
-      setConfirmPassword("");
-      fetchAccounts();
+    try {
+      if (adminAvailable) {
+        const { data, error } = await supabase.auth.admin.createUser({ 
+          email, 
+          password,
+          email_confirm: true
+        });
+        setLoading(false);
+        if (error) throw error;
+        setSuccess("Account created successfully (admin)");
+        setEmail("");
+        setPassword("");
+        setConfirmPassword("");
+        fetchAccounts();
+      } else {
+        // Fallback: use signUp from client (will send confirmation email depending on project settings)
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        setLoading(false);
+        if (error) throw error;
+        setSuccess("Account signup initiated. User must confirm email if confirmation is enabled.");
+        setEmail("");
+        setPassword("");
+        setConfirmPassword("");
+      }
+    } catch (err: any) {
+      setLoading(false);
+      setError(err?.message || String(err));
     }
   }
 
   async function handleApproveAccount(id: string) {
+    if (!adminAvailable) {
+      setError('Admin approve is not available from client. Run this action from server with service role key.')
+      return
+    }
     setLoading(true);
     setError("");
     setSuccess("");
@@ -82,6 +130,10 @@ export default function AccountsManager() {
   }
 
   async function handleDisapproveAccount(id: string) {
+    if (!adminAvailable) {
+      setError('Admin revoke is not available from client. Run this action from server with service role key.')
+      return
+    }
     setLoading(true);
     setError("");  
     setSuccess("");
@@ -97,6 +149,10 @@ export default function AccountsManager() {
   }
 
   async function handleDelete(id: string) {
+    if (!adminAvailable) {
+      setError('Admin delete is not available from client. Run this action from server with service role key.')
+      return
+    }
     setLoading(true);
     setError("");
     setSuccess("");
@@ -110,6 +166,10 @@ export default function AccountsManager() {
   }
 
   async function handleResetPassword(id: string) {
+    if (!adminAvailable) {
+      setError('Admin reset password is not available from client. Run this action from server with service role key.')
+      return
+    }
     setLoading(true);
     setError("");
     setSuccess("");
@@ -145,7 +205,7 @@ export default function AccountsManager() {
       </div>
       {error && <div className="text-red-600 text-sm">{error}</div>}
       {success && <div className="text-green-600 text-sm">{success}</div>}
-      <div>
+      {/* <div>
         <h3 className="font-semibold mb-2">All Accounts</h3>
         <div className="border rounded-lg overflow-hidden">
           <div className="bg-muted p-3 grid grid-cols-6 gap-4 font-medium text-sm">
@@ -202,7 +262,7 @@ export default function AccountsManager() {
             </div>
           ))}
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

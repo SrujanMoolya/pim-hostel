@@ -101,7 +101,8 @@ export default function DevelopedBy() {
         Developed by MCA batch 2024-2026 for PIM - Poornaprajna Institute of Management
       </div>
       <div className="mt-4 text-sm text-muted-foreground">
-        Developed by Svvaap Innovations and Team
+        Developed by Svvaap Innovations and Team <a className="text-sm text-gray-500 sm:text-center dark:text-gray-400" href="https://svvaap.in"><img src="https://svvaap.in/assets/logo_dark-DGRfYr3V.png" className="h-8 " /></a>
+        
       </div>
     </div>
   );

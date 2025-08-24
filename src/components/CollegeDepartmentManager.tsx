@@ -18,6 +18,7 @@ interface Department {
 interface College {
   id: string;
   name: string;
+  code?: string;
 }
 
 export default function CollegeDepartmentManager() {
@@ -27,7 +28,7 @@ export default function CollegeDepartmentManager() {
   const [editingDept, setEditingDept] = useState<Department | null>(null);
   const [editingCollege, setEditingCollege] = useState<College | null>(null);
   const [deptForm, setDeptForm] = useState({ code: "", name: "" });
-  const [collegeForm, setCollegeForm] = useState({ name: "" });
+  const [collegeForm, setCollegeForm] = useState({ name: "", code: "" });
   const [dialogOpen, setDialogOpen] = useState({ dept: false, college: false });
   const { toast } = useToast();
 
@@ -39,13 +40,12 @@ export default function CollegeDepartmentManager() {
     setLoading(true);
     const [deptResult, collegeResult] = await Promise.all([
       supabase.from("departments").select("*").order("name"),
-      supabase.from("students").select("college").not("college", "is", null)
+      supabase.from("colleges").select("*").order("name")
     ]);
-    
-    if (deptResult.data) setDepartments(deptResult.data);
+
+    if (deptResult.data) setDepartments(deptResult.data as any[]);
     if (collegeResult.data) {
-      const uniqueColleges = [...new Set(collegeResult.data.map(s => s.college))].filter(Boolean);
-      setColleges(uniqueColleges.map((name, index) => ({ id: index.toString(), name })));
+      setColleges((collegeResult.data as any[]).map(c => ({ id: String(c.id), name: c.name, code: c.code })));
     }
     setLoading(false);
   }
@@ -103,6 +103,9 @@ export default function CollegeDepartmentManager() {
     
     try {
       if (editingCollege) {
+        // update colleges table (name + code)
+        const { error: upErr } = await supabase.from('colleges').update({ name: collegeForm.name, code: collegeForm.code }).eq('id', editingCollege.id)
+        if (upErr) throw upErr
         // Update all students with old college name to new name
         const { error } = await supabase
           .from("students")
@@ -111,11 +114,13 @@ export default function CollegeDepartmentManager() {
         if (error) throw error;
         toast({ title: "College updated successfully" });
       } else {
-        // Just add the college name to our local state - it will be created when a student is assigned
-        toast({ title: "College name saved" });
+        // insert into colleges table (name + code required)
+        const { error: insertErr } = await supabase.from('colleges').insert({ name: collegeForm.name, code: collegeForm.code })
+        if (insertErr) throw insertErr
+        toast({ title: "College created successfully" });
       }
       
-      setCollegeForm({ name: "" });
+  setCollegeForm({ name: "", code: "" });
       setEditingCollege(null);
       setDialogOpen({ ...dialogOpen, college: false });
       fetchData();
@@ -130,6 +135,14 @@ export default function CollegeDepartmentManager() {
     
     setLoading(true);
     try {
+      // find college id
+      const { data: colData, error: findErr } = await supabase.from('colleges').select('id').eq('name', name).limit(1).single()
+      if (findErr && findErr.code !== 'PGRST116') throw findErr
+      if (colData && colData.id) {
+        const { error: delErr } = await supabase.from('colleges').delete().eq('id', colData.id)
+        if (delErr) throw delErr
+      }
+      // unset college on students
       const { error } = await supabase
         .from("students")
         .update({ college: null })
@@ -240,7 +253,7 @@ export default function CollegeDepartmentManager() {
               <DialogTrigger asChild>
                 <Button onClick={() => {
                   setEditingCollege(null);
-                  setCollegeForm({ name: "" });
+              setCollegeForm({ name: "", code: "" });
                 }}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add College
@@ -255,9 +268,18 @@ export default function CollegeDepartmentManager() {
                     <Label>College Name</Label>
                     <Input 
                       value={collegeForm.name} 
-                      onChange={(e) => setCollegeForm({ name: e.target.value })}
+                      onChange={(e) => setCollegeForm({ ...collegeForm, name: e.target.value })}
                       placeholder="e.g., Engineering College"
                       required 
+                    />
+                  </div>
+                  <div>
+                    <Label>College Code</Label>
+                    <Input
+                      value={collegeForm.code}
+                      onChange={(e) => setCollegeForm({ ...collegeForm, code: e.target.value })}
+                      placeholder="e.g., PIM, PPC"
+                      required
                     />
                   </div>
                   <Button type="submit" disabled={loading} className="w-full">
@@ -280,7 +302,7 @@ export default function CollegeDepartmentManager() {
                         variant="outline"
                         onClick={() => {
                           setEditingCollege(college);
-                          setCollegeForm({ name: college.name });
+                          setCollegeForm({ name: college.name, code: (college as any).code || '' });
                           setDialogOpen({ ...dialogOpen, college: true });
                         }}
                       >

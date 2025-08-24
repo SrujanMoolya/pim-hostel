@@ -30,6 +30,7 @@ import { z } from "zod"
 import { supabase } from "@/integrations/supabase/client"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
+import CollegeSelect from '@/components/CollegeSelect'
 
 const studentSchema = z.object({
   student_id: z.string().min(1, "Student ID is required"),
@@ -290,20 +291,7 @@ export const AddStudentDialog = ({ departments }: AddStudentDialogProps) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>College</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select college" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="PIM">PIM</SelectItem>
-                      <SelectItem value="PPC">PPC</SelectItem>
-                      <SelectItem value="PPC Evening">PPC Evening</SelectItem>
-                      <SelectItem value="PG">PG</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <CollegeSelect onChange={field.onChange} value={field.value} />
                   <FormMessage />
                 </FormItem>
               )}
