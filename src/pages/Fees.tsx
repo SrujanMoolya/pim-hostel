@@ -25,6 +25,7 @@ import { useQuery } from "@tanstack/react-query"
 import { RecordPaymentDialog } from "@/components/RecordPaymentDialog"
 import { StudentDetailDialog } from "@/components/StudentDetailDialog"
 import { PaymentDialog } from "@/components/PaymentDialog"
+import { EditFeeDialog } from "@/components/EditFeeDialog"
 
 const Fees = () => {
   const [academicYear, setAcademicYear] = useState("2024-25")
@@ -427,7 +428,10 @@ const Fees = () => {
                   filteredFeeData.map((fee) => {
                     const dueAmount = Number(fee.amount) - Number(fee.paid_amount)
                     return (
-                      <TableRow key={fee.id} className="hover:bg-muted/50">
+                      <TableRow
+                        key={fee.id}
+                        className={`hover:bg-muted/50${(dueAmount > 0 && new Date(fee.due_date) < new Date()) ? ' bg-red-100' : ''}`}
+                      >
                         <TableCell>
                           <div className="flex flex-col">
                             <span className="font-medium">{fee.students?.name}</span>
@@ -486,6 +490,7 @@ const Fees = () => {
                             {dueAmount > 0 && (
                               <PaymentDialog fee={fee} />
                             )}
+                            <EditFeeDialog fee={fee} onUpdated={() => window.location.reload()} />
                           </div>
                         </TableCell>
                       </TableRow>
