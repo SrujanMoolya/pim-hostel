@@ -6,7 +6,9 @@ import {
   Settings, 
   Building2,
   ChevronLeft,
-  ChevronRight 
+  ChevronRight,
+  Receipt,
+  TrendingUp
 } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 
@@ -38,6 +40,16 @@ const navigationItems = [
     title: "Fees", 
     url: "/fees", 
     icon: CreditCard 
+  },
+  {
+    title: "Expenses",
+    url: "/expenses",
+    icon: Receipt
+  },
+  {
+    title: "Income",
+    url: "/income",
+    icon: TrendingUp
   },
   {
     title: "Room",

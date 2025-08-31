@@ -7,6 +7,8 @@ import { AuthProvider, useAuth } from "@/components/AuthProvider";
 import Dashboard from "@/pages/Dashboard";
 import Students from "@/pages/Students";
 import Fees from "@/pages/Fees";
+import Expenses from "@/pages/Expenses";
+import Income from "@/pages/Income";
 import Settings from "@/pages/Settings";
 import DevelopedBy from "@/pages/DevelopedBy";
 import Login from "@/pages/Login";
@@ -46,6 +48,8 @@ const App = () => (
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/students" element={<Students />} />
                     <Route path="/fees" element={<Fees />} />
+                    <Route path="/expenses" element={<Expenses />} />
+                    <Route path="/income" element={<Income />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/developed-by" element={<DevelopedBy />} />
                     <Route path="/rooms" element={<Rooms />} />
